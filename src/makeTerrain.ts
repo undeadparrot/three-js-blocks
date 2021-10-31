@@ -1,16 +1,18 @@
 import * as THREE from "three";
-import { Vector3 } from "three";
+import { NearestFilter, Vector2, Vector3 } from "three";
 import { Perlin2D } from "./perlin";
 import {} from "three/examples/jsm/geometries/";
+import tileset2 from './tileset2.png';
 
 const GRADIENT_RESOLUTION = 16;
 export const perlin = new Perlin2D(GRADIENT_RESOLUTION, GRADIENT_RESOLUTION);
+const loader = new THREE.TextureLoader();
 
 class WorldGrid {
   public x: number;
   public y: number;
   public z: number;
-  public data: boolean[][][];
+  public data: number[][][];
   public get(x: number, y: number, z: number) {
     if (x >= this.x || y >= this.y || z >= this.z) {
       return null;
@@ -31,7 +33,7 @@ class WorldGrid {
       for (let y = 0; y < this.y; y++) {
         this.data[x].push([]);
         for (let z = 0; z < this.z; z++) {
-          this.data[x][y].push(false);
+          this.data[x][y].push(0);
         }
       }
     }
@@ -39,23 +41,18 @@ class WorldGrid {
     for (let x = 0; x < this.x; x++) {
       for (let z = 0; z < this.z; z++) {
         const v = Math.max(
-          Math.floor((perlin.get(x * 0.5, z * 0.5) + 0.5) * 4),
+          Math.floor((perlin.get(x * 0.5, z * 0.5) + 0.5) * 5),
           0
         );
-        for (let y = 0; y <= v; y++) {
-          this.data[x][y][z] = true;
+        for (let y = 0; y < v; y++) {
+          this.data[x][y][z] = 1;
         }
 
-        const v2 =
-          this.y -
-          Math.max(Math.floor((perlin.get(x * 0.5, z * 0.5) + 0.5) * 4), 1);
-        for (let y = v2; y < this.y; y++) {
-          this.data[x][y][z] = true;
-        }
+        this.data[x][this.y-1][z] = 2;
 
         const v3 = 8 + Math.floor((perlin.get(x * 0.5, z * 0.5) + 0.5) * 16);
         if (v3 > 0 && v3 < this.y) {
-          this.data[x][v3][z] = true;
+          this.data[x][v3][z] = 1;
         }
       }
     }
@@ -188,55 +185,95 @@ export const boxfaces: BoxFace[] = [
   },
 ];
 
+const textures = [
+  {tl: new Vector2(0,0)},
+  {tl: new Vector2(0,0)},
+  {tl: new Vector2(0.5,0)},
+  {tl: new Vector2(0,0.5)},
+  {tl: new Vector2(0.5,0.5)},
+]
+const tileWidth = new Vector2(0.5, 0);
+const tileHeight = new Vector2(0, 0.5);
+
 export function makeTerrain() {
   const world = makeGrid();
   const geometry = new THREE.BufferGeometry();
   const material = new THREE.MeshStandardMaterial();
+  const texture = loader.load(tileset2);
+  texture.magFilter = NearestFilter;
+  texture.minFilter = NearestFilter;
+  material.map = texture;
   const thing = new THREE.Mesh(geometry, material);
   const group = new THREE.Group();
   group.add(thing);
-  const v3array: number[] = [];
+  const positions: number[] = [];
+  const uvs: number[] = [];
   for (let x = 0; x < world.x; x++) {
     for (let y = 0; y < world.y; y++) {
       for (let z = 0; z < world.z; z++) {
-        if (!world.get(x, y, z)) {
+        const blocktype = world.get(x, y, z) || 0;
+        if (blocktype === null || blocktype < 1) {
           continue;
         }
-        const y2 = y * 0.15;
+        const tex = textures[blocktype];
+        const texp0 = new Vector2(tex.tl.x + 0.5, tex.tl.y+ 0.5);
+        const texp1 = new Vector2(tex.tl.x, tex.tl.y+ 0.5);
+        const texp2 = new Vector2(tex.tl.x , tex.tl.y);
+        const texp3 = new Vector2(tex.tl.x + 0.5, tex.tl.y);
 
         for (const face of boxfaces) {
           const adjacentBlock = world.get(
             x + face.offset.x,
             y + face.offset.y,
             z + face.offset.z
-          );
-          if (adjacentBlock) {
+          ) || 0;
+          if (adjacentBlock>0) {
             continue;
           }
-          v3array.push(face.p0.x + x);
-          v3array.push((face.p0.y + y) * 0.15);
-          v3array.push(face.p0.z + z); //
-          v3array.push(face.p1.x + x);
-          v3array.push((face.p1.y + y) * 0.15);
-          v3array.push(face.p1.z + z); //
-          v3array.push(face.p2.x + x);
-          v3array.push((face.p2.y + y) * 0.15);
-          v3array.push(face.p2.z + z); //
-          v3array.push(face.p2.x + x);
-          v3array.push((face.p2.y + y) * 0.15);
-          v3array.push(face.p2.z + z); //
-          v3array.push(face.p3.x + x);
-          v3array.push((face.p3.y + y) * 0.15);
-          v3array.push(face.p3.z + z); //
-          v3array.push(face.p0.x + x);
-          v3array.push((face.p0.y + y) * 0.15);
-          v3array.push(face.p0.z + z); //
+          uvs.push(texp0.x);
+          uvs.push(texp0.y);
+          positions.push(face.p0.x + x);
+          positions.push((face.p0.y + y) * 0.5);
+          positions.push(face.p0.z + z); //
+
+          uvs.push(texp1.x);
+          uvs.push(texp1.y);
+          positions.push(face.p1.x + x);
+          positions.push((face.p1.y + y) * 0.5);
+          positions.push(face.p1.z + z); //
+
+          uvs.push(texp2.x);
+          uvs.push(texp2.y);
+          positions.push(face.p2.x + x);
+          positions.push((face.p2.y + y) * 0.5);
+          positions.push(face.p2.z + z); //
+
+          uvs.push(texp2.x);
+          uvs.push(texp2.y);
+          positions.push(face.p2.x + x);
+          positions.push((face.p2.y + y) * 0.5);
+          positions.push(face.p2.z + z); //
+
+          uvs.push(texp3.x);
+          uvs.push(texp3.y);
+          positions.push(face.p3.x + x);
+          positions.push((face.p3.y + y) * 0.5);
+          positions.push(face.p3.z + z); //
+
+          uvs.push(texp0.x);
+          uvs.push(texp0.y);
+          positions.push(face.p0.x + x);
+          positions.push((face.p0.y + y) * 0.5);
+          positions.push(face.p0.z + z); //
+          
         }
       }
     }
   }
-  const f32buffer = new Float32Array(v3array);
-  geometry.setAttribute("position", new THREE.BufferAttribute(f32buffer, 3));
+  const positionBuffer = new Float32Array(positions);
+  geometry.setAttribute("position", new THREE.BufferAttribute(positionBuffer, 3));
+  const uvBuffer = new Float32Array(uvs);
+  geometry.setAttribute("uv", new THREE.BufferAttribute(uvBuffer, 2));
   geometry.computeVertexNormals();
 
   const wireframe = new THREE.WireframeGeometry(geometry);

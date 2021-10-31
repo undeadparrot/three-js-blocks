@@ -4,13 +4,22 @@ import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer
 import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
 import { ShaderPass } from "three/examples/jsm/postprocessing/ShaderPass";
 import { FXAAShader } from "three/examples/jsm/shaders/FXAAShader";
+import { InteractionController } from "./InteractionController";
 import { makeTerrain } from "./makeTerrain";
 
+let orthozoom = 5;
+
 const app = document.querySelector<HTMLDivElement>("#app")!;
+const interactions = new InteractionController();
+interactions.install(app);
 
 export const clock = new THREE.Clock();
 export const SCENE = new THREE.Scene();
 export const orthocam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 1000);
+orthocam.position.x = 12;
+orthocam.position.y = 5;
+orthocam.position.z = 25;
+orthocam.rotation.set(-0.25, 0.4, 0.0);
 
 const renderer = new THREE.WebGLRenderer();
 renderer.setClearColor(new Color(0.9, 0.9, 0.9));
@@ -24,10 +33,10 @@ effectFXAA.enabled = false;
 composer.addPass(effectFXAA);
 window.fxaa = effectFXAA;
 
-var ambientLight = new THREE.AmbientLight("black");
+var ambientLight = new THREE.AmbientLight(0x33_44_55);
 SCENE.add(ambientLight);
 
-var light = new THREE.PointLight(0xff0000, 3, 20, 5);
+var light = new THREE.PointLight(0xffffff, 3, 50, 5);
 light.position.set(2, 2, 0);
 SCENE.add(light);
 
@@ -55,16 +64,11 @@ window.addEventListener("resized", resizeWindow);
 resizeWindow();
 
 function resizeWindow() {
-  const orthozoom = 5;
   const orthoratio = window.innerWidth / window.innerHeight;
   orthocam.left = -1 * orthozoom * orthoratio;
   orthocam.right = orthozoom * orthoratio;
   orthocam.top = orthozoom;
   orthocam.bottom = -1 * orthozoom;
-  orthocam.position.x = 5;
-  orthocam.position.y = 1;
-  orthocam.position.z = 5;
-  orthocam.rotation.set(-0.25, 0.4, 0.0);
   orthocam.updateProjectionMatrix();
 
   composer.setSize(
@@ -82,11 +86,23 @@ let t = 0;
 export function animate() {
   const delta = clock.getDelta();
   composer.render();
-  light.position.setX(3 + Math.cos(t * 2));
-  light.position.setZ(3 + Math.sin(t * 2));
+  interactions.update();
+  light.position.setX(10 + Math.cos(t) * 5);
+  light.position.setZ(10 + Math.sin(t)* 5);
   light.updateMatrix();
   t += delta;
-  orthocam.rotation.set(-0.25 * Math.sin(t), 0.4 * Math.cos(t), 0.0);
+  if(interactions.leftDown){
+    console.log(orthocam.position, orthocam.rotation, orthozoom);
+  }
+  if(interactions.shiftDown ){
+    orthozoom = Math.min(Math.max(orthozoom + interactions.wheelDelta.y * 0.5 * delta, 1), 50);
+    resizeWindow();
+  } else {
+    orthocam.translateX(-interactions.wheelDelta.x*delta);
+    orthocam.translateY(interactions.wheelDelta.y*delta);
+  }
   requestAnimationFrame(animate);
 }
 animate();
+
+
