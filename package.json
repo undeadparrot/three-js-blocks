@@ -1,0 +1,21 @@
+{
+  "name": "play-with-threejs-blocks",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "author": "",
+  "license": "ISC",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "serve": "vite preview"
+  },
+  "devDependencies": {
+    "typescript": "^4.3.2",
+    "vite": "^2.6.4"
+  },
+  "dependencies": {
+    "@types/three": "^0.133.1",
+    "three": "^0.133.1"
+  }
+}
