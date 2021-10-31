@@ -5,12 +5,6 @@ import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
 import { ShaderPass } from "three/examples/jsm/postprocessing/ShaderPass";
 import { FXAAShader } from "three/examples/jsm/shaders/FXAAShader";
 import { makeTerrain } from "./makeTerrain";
-import { makeBlockyTerrain } from "./makeBlockyTerrain";
-import { Perlin2D } from "./perlin";
-
-const GRADIENT_RESOLUTION = 16;
-export const perlin = new Perlin2D(GRADIENT_RESOLUTION, GRADIENT_RESOLUTION);
-window.perlin = perlin;
 
 const app = document.querySelector<HTMLDivElement>("#app")!;
 
@@ -30,10 +24,10 @@ effectFXAA.enabled = false;
 composer.addPass(effectFXAA);
 window.fxaa = effectFXAA;
 
-var ambientLight = new THREE.AmbientLight('black');
+var ambientLight = new THREE.AmbientLight("black");
 SCENE.add(ambientLight);
 
-var light = new THREE.PointLight(0xff0000,3, 20, 5);
+var light = new THREE.PointLight(0xff0000, 3, 20, 5);
 light.position.set(2, 2, 0);
 SCENE.add(light);
 
@@ -47,6 +41,7 @@ axes.setColors(
   new THREE.Color("green"),
   new THREE.Color("blue")
 );
+axes.translateX(0.001);
 axes.translateY(0.001);
 window.axes = axes;
 const gridHelper = new THREE.GridHelper(16, 16);
@@ -87,9 +82,11 @@ let t = 0;
 export function animate() {
   const delta = clock.getDelta();
   composer.render();
-  light.position.setX(Math.cos(t*5));
-  light.updateMatrix()
-  t+=delta;
+  light.position.setX(3 + Math.cos(t * 2));
+  light.position.setZ(3 + Math.sin(t * 2));
+  light.updateMatrix();
+  t += delta;
+  orthocam.rotation.set(-0.25 * Math.sin(t), 0.4 * Math.cos(t), 0.0);
   requestAnimationFrame(animate);
 }
 animate();
