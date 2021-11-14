@@ -8,6 +8,7 @@ export class InteractionController {
   wheelDelta: Vector2;
   wheelDeltaTemp: Vector2;
   leftDown: Boolean;
+  leftClicked: Boolean;
   leftDownTime: Date;
   leftUpTime: Date;
   leftDownPos: Vector2;
@@ -20,6 +21,7 @@ export class InteractionController {
     this.mousePos = new Vector2(0, 0);
     this.mouseDelta = new Vector2(0, 0);
     this.leftDown = false;
+    this.leftClicked = false;
     this.leftDownTime = new Date();
     this.leftUpTime = new Date();
     this.leftDownPos = new Vector2(0, 0);
@@ -38,18 +40,19 @@ export class InteractionController {
     });
     element.addEventListener("mousedown", (event: MouseEvent) => {
       console.log("mousedown", event.type, event.button, event.buttons);
-      if(event.button === 0){
-          this.leftDown = true;
-          this.leftDownPos = this.mousePos;
-          this.leftDownTime = new Date();
+      if (event.button === 0) {
+        this.leftDown = true;
+        this.leftDownPos = this.mousePos;
+        this.leftDownTime = new Date();
       }
     });
     element.addEventListener("mouseup", (event: MouseEvent) => {
       console.log("mouseup", event.type, event.button, event.buttons);
-      if(event.button === 0){
-          this.leftDown = false;
-          this.leftUpPos = this.mousePos;
-          this.leftUpTime = new Date();
+      if (event.button === 0) {
+        this.leftDown = false;
+        this.leftUpPos = this.mousePos;
+        this.leftUpTime = new Date();
+        this.leftClicked = true;
       }
     });
     element.addEventListener("wheel", (event: WheelEvent) => {
@@ -57,22 +60,23 @@ export class InteractionController {
     });
     document.addEventListener("keydown", (event: KeyboardEvent) => {
       console.log("keydown", event.shiftKey, event.key, event.type, event.code);
-      if(event.code === "ShiftLeft"){
+      if (event.code === "ShiftLeft") {
         this.shiftDownTemp = true;
       }
     });
     document.addEventListener("keyup", (event: KeyboardEvent) => {
-      if(event.code === "ShiftLeft"){
+      if (event.code === "ShiftLeft") {
         this.shiftDownTemp = false;
       }
     });
   }
   update() {
     this.firstUpdate = false;
+    this.leftClicked = false;
     this.mouseDelta.copy(this.mousePos).sub(this.mousePosPrevious);
     this.mousePosPrevious.copy(this.mousePos);
     this.wheelDelta.copy(this.wheelDeltaTemp);
-    this.wheelDeltaTemp.set(0,0);
+    this.wheelDeltaTemp.set(0, 0);
     this.shiftDown = this.shiftDownTemp;
   }
 }

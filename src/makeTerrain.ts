@@ -2,7 +2,7 @@ import * as THREE from "three";
 import { NearestFilter, Vector2, Vector3 } from "three";
 import { Perlin2D } from "./perlin";
 import {} from "three/examples/jsm/geometries/";
-import tileset2 from './tileset2.png';
+import tileset2 from "./tileset2.png";
 
 const GRADIENT_RESOLUTION = 16;
 export const perlin = new Perlin2D(GRADIENT_RESOLUTION, GRADIENT_RESOLUTION);
@@ -48,11 +48,11 @@ class WorldGrid {
           this.data[x][y][z] = 1;
         }
 
-        this.data[x][this.y-1][z] = 2;
+        this.data[x][this.y - 1][z] = 3;
 
         const v3 = 8 + Math.floor((perlin.get(x * 0.5, z * 0.5) + 0.5) * 16);
         if (v3 > 0 && v3 < this.y) {
-          this.data[x][v3][z] = 1;
+          this.data[x][v3][z] = 2;
         }
       }
     }
@@ -186,17 +186,16 @@ export const boxfaces: BoxFace[] = [
 ];
 
 const textures = [
-  {tl: new Vector2(0,0)},
-  {tl: new Vector2(0,0)},
-  {tl: new Vector2(0.5,0)},
-  {tl: new Vector2(0,0.5)},
-  {tl: new Vector2(0.5,0.5)},
-]
+  { tl: new Vector2(0, 0) },
+  { tl: new Vector2(0, 0) },
+  { tl: new Vector2(0.5, 0) },
+  { tl: new Vector2(0, 0.5) },
+  { tl: new Vector2(0.5, 0.5) },
+];
 const tileWidth = new Vector2(0.5, 0);
 const tileHeight = new Vector2(0, 0.5);
 
-export function makeTerrain() {
-  const world = makeGrid();
+export function makeTerrain(world) {
   const geometry = new THREE.BufferGeometry();
   const material = new THREE.MeshStandardMaterial();
   const texture = loader.load(tileset2);
@@ -216,18 +215,19 @@ export function makeTerrain() {
           continue;
         }
         const tex = textures[blocktype];
-        const texp0 = new Vector2(tex.tl.x + 0.5, tex.tl.y+ 0.5);
-        const texp1 = new Vector2(tex.tl.x, tex.tl.y+ 0.5);
-        const texp2 = new Vector2(tex.tl.x , tex.tl.y);
+        const texp0 = new Vector2(tex.tl.x + 0.5, tex.tl.y + 0.5);
+        const texp1 = new Vector2(tex.tl.x, tex.tl.y + 0.5);
+        const texp2 = new Vector2(tex.tl.x, tex.tl.y);
         const texp3 = new Vector2(tex.tl.x + 0.5, tex.tl.y);
 
         for (const face of boxfaces) {
-          const adjacentBlock = world.get(
-            x + face.offset.x,
-            y + face.offset.y,
-            z + face.offset.z
-          ) || 0;
-          if (adjacentBlock>0) {
+          const adjacentBlock =
+            world.get(
+              x + face.offset.x,
+              y + face.offset.y,
+              z + face.offset.z
+            ) || 0;
+          if (adjacentBlock > 0) {
             continue;
           }
           uvs.push(texp0.x);
@@ -265,16 +265,19 @@ export function makeTerrain() {
           positions.push(face.p0.x + x);
           positions.push((face.p0.y + y) * 0.5);
           positions.push(face.p0.z + z); //
-          
         }
       }
     }
   }
   const positionBuffer = new Float32Array(positions);
-  geometry.setAttribute("position", new THREE.BufferAttribute(positionBuffer, 3));
+  geometry.setAttribute(
+    "position",
+    new THREE.BufferAttribute(positionBuffer, 3)
+  );
   const uvBuffer = new Float32Array(uvs);
   geometry.setAttribute("uv", new THREE.BufferAttribute(uvBuffer, 2));
   geometry.computeVertexNormals();
+  geometry.computeBoundingBox();
 
   const wireframe = new THREE.WireframeGeometry(geometry);
 

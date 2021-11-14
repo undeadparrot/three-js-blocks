@@ -43,9 +43,14 @@ export class Perlin2D {
       this.gradients.push(row);
     }
   }
-  private dotProduct = (x: number, y: number, vX: number, vY: number): number => {
+  private dotProduct = (
+    x: number,
+    y: number,
+    vX: number,
+    vY: number
+  ): number => {
     const dVec = { x: x - vX, y: y - vY };
-    const gradient = this.gradients[vX%this.width][vY%this.height];
+    const gradient = this.gradients[vX % this.width][vY % this.height];
     return dVec.x * gradient.x + dVec.y * gradient.y;
   };
   get = (x: number, y: number): number => {
@@ -59,18 +64,23 @@ export class Perlin2D {
     const xBottom = interpolate(x - xFloor, botLeft, botRight);
     return interpolate(y - yFloor, xTop, xBottom);
   };
-  getOctave =  (x: number, y: number, octaves: number, persistence: number): number => {
+  getOctave = (
+    x: number,
+    y: number,
+    octaves: number,
+    persistence: number
+  ): number => {
     let total = 0;
     let frequency = 1;
     let amplitude = 1;
-    let totalAmplitude = 0; 
-    for(let i=0; i<octaves; i++){
-      total += this.get(x*frequency,y*frequency) * amplitude;
+    let totalAmplitude = 0;
+    for (let i = 0; i < octaves; i++) {
+      total += this.get(x * frequency, y * frequency) * amplitude;
       totalAmplitude += amplitude;
-      
+
       frequency *= 2;
       amplitude *= persistence;
     }
-    return total/totalAmplitude;
-  }
+    return total / totalAmplitude;
+  };
 }
